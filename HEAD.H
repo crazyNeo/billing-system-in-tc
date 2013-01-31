@@ -1,0 +1,12 @@
+#include <stdio.h>
+#include <conio.h>
+#include <string.h>
+#include <math.h>
+#include <bios.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include "object.h"
+#include "table.h"
+#include "bill.h"
+#include "menu.h"
+#include "file.h"

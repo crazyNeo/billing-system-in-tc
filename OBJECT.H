@@ -1,0 +1,645 @@
+#include "stdio.h"
+#include "pro.h"
+/*
+#include <conio.h>
+#include <stdio.h>
+#include <math.h>
+#include <dos.h>
+#include <string.h>
+#include "menu.h"
+//#include "tabl2.h"
+*/
+
+#ifndef OBJECT_H
+#define OBJECT_H
+
+#ifndef POSTITION
+#define POSTITION
+struct Position //structure determining the position of the cursor for the text box
+{
+  int x,y,wd; //beginning x coordinate, middle y coordinate and the width
+};
+#endif
+
+typedef char prodid[11];// for product id
+typedef char prodnm[13];// for product name
+typedef char price[9];// for price
+typedef char quanty[9];// for quantity
+//typedef enum bool {false=0,true=1};//boolean datatype
+typedef int bool;
+const bool true=1;
+const bool false=0;
+
+struct inbill //structure to store the values input by the user
+{
+  prodid pdid; //typedef char prodid[11]; so prodid is a char datatype of array size 11
+  prodnm pdnm; //typedef char prodnm[13]; so pdnm is a char datatype of array size 13
+  price sprce; //typedef char price[9]; so prce is a char datatype of array size 9
+  quanty sqty; //typedef char quantity[9]; so qty is a char datatype of array size 13
+  float prce;//store the string sprce after converting it to float
+  int qty;//store the string sqty after converting it to int
+  int st;//store stock
+  float amount;//store the amount ie product of prce and qty
+  bool flag[4];//write-flags true when each of the other fields are written
+  bool fflag;
+};
+
+struct menop
+{ char titl[25];
+	int flag;
+//  char *tit;
+};
+
+
+#define TBDISP\
+					       \
+	  if (asc == 8)                            \
+	  {                                         \
+	    if (ic[cur]>0)				     \
+	    {                                         \
+	      ic[cur]--;                                     \
+	      mc[cur]--;                                     \
+	      gotoxy(pos[cur].x+ic[cur],pos[cur].y);          \
+	      cprintf(" ");                              \
+	      gotoxy(pos[cur].x+ic[cur],pos[cur].y);            \
+	    }                                              \
+	  }                                                 \
+	  else if (key==0x4b00)                              \
+	  {                                                   \
+	    if (ic[cur]>0)				     \
+	    {                                         \
+	      ic[cur]--;                                     \
+	      gotoxy(pos[cur].x+ic[cur],pos[cur].y);          \
+	    }						       \
+	  }                                                \
+	   else if ((ic[cur]<mc[cur])&&(key==0x4d00)) \
+	  {                                                 \
+	      ic[cur]++;                                          \
+	      gotoxy(pos[cur].x+ic[cur],pos[cur].y);          \
+	  }                                             \
+	  else if ((mc[cur]<pos[cur].wd)&&((isgraph(key & 0xFF))||(asc==32)))      \
+	  {							   \
+	      gotoxy(pos[cur].x+ic[cur],pos[cur].y);                 \
+	      cprintf("%c",asc);                                \
+	      ic[cur]++;                                               \
+	      mc[cur]++;                                               \
+	  }							   \
+	  //else	\
+	  //{ cprintf("invalid char");}
+
+#define PSSDISP\
+					       \
+	  if (asc == 8)                            \
+	  {                                         \
+	    if (ic[cur]>0)				     \
+	    {                                         \
+	      ic[cur]--;                                     \
+	      mc[cur]--;                                     \
+	      gotoxy(pos[cur].x+ic[cur],pos[cur].y);          \
+	      cprintf(" ");                              \
+	      gotoxy(pos[cur].x+ic[cur],pos[cur].y);            \
+	    }                                              \
+	  }                                                 \
+	  else if (key==0x4b00)                              \
+	  {                                                   \
+	    if (ic[cur]>0)				     \
+	    {                                         \
+	      ic[cur]--;                                     \
+	      gotoxy(pos[cur].x+ic[cur],pos[cur].y);          \
+	    }						       \
+	  }                                                \
+	   else if ((ic[cur]<mc[cur])&&(key==0x4d00)) \
+	  {                                                 \
+	      ic[cur]++;                                          \
+	      gotoxy(pos[cur].x+ic[cur],pos[cur].y);          \
+	  }                                             \
+	  else if ((mc[cur]<pos[cur].wd)&&((isgraph(key & 0xFF))||(asc==32)))      \
+	  {							   \
+	      gotoxy(pos[cur].x+ic[cur],pos[cur].y);                 \
+	      cprintf("*");                                \
+	      ic[cur]++;                                               \
+	      mc[cur]++;                                               \
+	  }							   \
+	  //else	\
+	  //{ cprintf("invalid char");}
+
+
+
+#define AMOUNT\
+{	int j;                            \
+	bill[cur/4].fflag=0;               \
+	if (bill[cur/4].flag[cur%4]==0)     \
+		bill[cur/4].flag[cur%4]=1;   \
+	for (j=0;j<4;j++)                       \
+	{	if (bill[cur/4].flag[j]==1)\
+			bill[cur/4].fflag++;                      \
+	}					   \
+	if (bill[cur/4].fflag==4)                   \
+	{                                            \
+		bill[cur/4].amount=(float)bill[cur/4].qty*bill[cur/4].prce;  \
+		gotoxy(billpos[5],billcorn[1]+3+cur/4);  \
+		cprintf("%.2f",bill[cur/4].amount);         \
+		TOTAL=0;                                   \
+		for (j=0;j<=(maxcur/4);j++)                 \
+			TOTAL+=bill[j].amount;              \
+		gotoxy(billpos[5],billcorn[1]+14*yunit);     \
+		cprintf("%.2f",TOTAL);                          \
+							       \
+		gotoxy(pos[cur-cur%4].x-5-1,pos[cur+5].y);          \
+		cprintf("%d",cur/4+2);                          \
+	}                                                    \
+}
+
+
+//global variables
+void (*curnt_fn) (int key);//pointer to a function
+void (*tmpcurnt_fn) (int key);//temporaty pointer
+int key, modifiers; //store the hex address of the keys and modifiers entered by the user
+int go_flag;
+//  char key;//to store the key input by the user;
+
+union REGS in, out;//unions for mouse defined in dos.h for int86
+
+//global variables
+   int i;
+   int flag;
+   int billcorn[4];//corners of the table for user defined resolution
+   int billpos[5];//position of the table headings
+   //scaling the units x and y
+   int xunit = 1;// wxmax/80.0;
+   int yunit = 1;//wymax/25.0;
+   /*for table in billing*/
+   int xn=5;//number of horizontal lines in the table
+   int yn=2;//number of verticle lines in the table
+   int wd[5]={5,10,12,13,10};//width of the horizontal lines
+   int hd[2]={1,10};//height of the vertical lines
+   float TOTAL;
+   struct inbill bill[10]; //declaring the object of the struct to store
+			  //data of billing and process purpose
+   struct Position pos[45];//text box position
+			  //4*10struct array storeing position
+			  //and width of the TEXT BOX
+   //struct  time t;
+   //struct date d;
+
+   int ic[40],mc[40];// ic inside cursor mc//max cursor
+	    //nbox=40;
+	    //ic is for the position of the cursor inside the text box
+	    //mc[cur] is the position of the last character inside th text box
+   int nbox=43;//number of boxes
+   //variables for the text boxes
+   int cur=0;//position of the cursor
+   int maxcur=0;//max position of the cursor
+   int prev_cur;//previous cursor position
+   int min_cur;
+   int printflag;
+
+   //menu.h
+   int no_op=9;//no. of options
+   int max_len=40;//max length of the column
+   struct menop opt[9];
+   int go_flag=0;
+   int mse_flag=0;
+   void (*curnt_fn) (int key);//pointer to a function
+
+   //file handling
+   FILE *fil;
+   int malloced=0;//flag of file handling start ==1
+   struct bill
+   {
+	char id[10];
+	char nm[10];
+	float pr;
+	int st;
+   };
+
+   struct bill2
+   {
+	char id[10];
+	char nm[10];
+	float pr;
+	int st;
+	char spr[8];
+	char s_st[6];
+	int sp_flag;//is in order while adding
+	bool flag[4];//every field is filled
+   };
+
+
+   struct bill3
+   {
+	char id[10];
+	char nm[10];
+	float pr;
+	int st;
+	struct bill3 *prev;
+	struct bill3 *next;
+   };
+
+   struct nos
+   {
+	tot_dat;
+	tot_aloc;
+	cur_pos;
+	chng_flag;
+	struct bill3 **list;//0 to tot_dat-1 are non-empty/filled
+			//tot_dat to tot_aloc are empty
+   };
+
+   struct settin
+   {
+	int name;
+	int price;
+	int st;
+	int fil;
+   };
+
+
+   //void *cur_fn();
+
+   FILE *fp,*tp;
+   struct bill2 item;
+   struct bill fitem;
+   struct bill *afitem;
+   struct nos fil_no;
+   void (*fil_fn_cur) ();
+   struct settin read_flag;
+
+#endif
+
+#ifndef CONVT5_H
+#define CONVT5_H
+
+
+//combing and converting each key (stroke) from independent key strokes into
+//a complete string
+
+//str is the array
+//asc is the ascii code of a character
+//i is the position in terms of natural number
+//n is the total number of character str already has
+
+void cnvts(char str[],char asc,int i,int n)
+{
+	int j=i-1;//j is position in terms of whole numbers
+
+	//isgraph checks if the ascii value is printable or not printible
+	if (isgraph(asc) || asc==32)
+	{	str[j]=asc;//put the ascii at the required position
+		if (i==n) str[j+1]='\0';//put null character ate end
+	       //	printf("convt1,%c",str[j]);
+	}
+
+}
+
+//converting / extracting the numbers from the string
+//to float data type
+float cnvtf(char str[],char asc,int i,int n)
+{
+    float num=0;
+    float flag=0;
+    //convert the recieved cahracters into string first
+    cnvts(str,asc,i,n);
+    n=0;
+    i=0;
+    asc=str[0];
+    while (asc!='\0')
+    {
+	asc=str[n];
+	n++;
+	if (47<asc  && asc<58)
+	{
+		//printf("%c\n",asc);
+		//printf("%f\n",num);
+		num=num*10+(asc-48);
+		//printf("%f\n",num);
+		if (flag==1) i++;//count starts when the decimal is recieved
+	}
+	else if (asc==46)//check for the decimal
+	{
+		flag=1;
+		//printf("%c",asc);
+	}
+
+    };
+    num/=pow(10,i);//puting the decimal point in the number
+    return (num);
+
+}
+
+
+//converting / extracting the numbers from the string
+//to intiger data type
+int cnvti(char str[],char asc,int i,int n)
+{
+    int num=0;
+    cnvts(str,asc,i,n);
+    n=0;
+    asc=str[0];
+    while (asc!='\0')
+    {
+	asc=str[n];
+	n++;
+	if (47<asc  && asc<58)
+	{
+		//printf("%c\n",asc);
+		//printf("%d\n",num);
+		num=num*10+(asc-48);
+		//printf("%d\n",num);
+
+	}
+	else if (isgraph(asc))
+	{
+		//printf("%c",asc);
+	}
+
+    };
+    return (num);
+}
+
+void itos(long a,char *b,int n)//ndigits including zero int the front
+{
+	int x;
+	int i;
+	if (n==0)
+    {
+		x=a;
+		for(i=0;x!=0;i++)
+			x/=10;
+		n=i;
+    }
+		for (i=0;i<n;i++)
+		{
+			x=a%10;
+			a=a/10;
+			b[n-1-i]=x+48;
+		}
+		b[n]='\0';
+}
+
+void rtrim(char *str)
+{
+	int i=0;
+	do
+	{
+		if (str[i]==' ')
+			str[i]='\0';
+		i++;
+	}while (str[i-1]!='\0');
+}
+
+#endif
+
+#ifndef SETTING_H
+#define SETTING_H
+void setn_disp()
+{
+	//values for the table
+	int menucorn[4]={5,3,50,25};
+	int i,j,c;//counter variables
+	int max_len=14;
+	cur=0;//position of the cursor
+	nbox=7;
+	go_flag=0;
+	no_op=7;
+	textbackground(BLUE);
+	clrscr();
+	//printingg the table
+	box(menucorn[0],menucorn[1],menucorn[2],menucorn[3]);
+
+	strcpy(opt[0].titl,"Use file\0");
+	strcpy(opt[1].titl,"To get:\0");
+	strcpy(opt[2].titl,"Product Name\0");
+	strcpy(opt[3].titl,"Price\0");
+	strcpy(opt[4].titl,"Stock\0");
+	//strcpy(opt[4].titl,"\0");
+	strcpy(opt[5].titl,"OK\0");
+	strcpy(opt[6].titl,"CANCEL\0");
+
+	for (i=0;i<no_op;i++)
+	{
+		int l=strlen(opt[i].titl);
+		for (j=l;j<max_len;j++)
+		{
+			opt[i].titl[j]=' ';
+		}
+		opt[i].titl[max_len]='\0';
+	}
+	//displaying the options
+	fp=fopen("settings.txt","r");
+
+	for(i=0;i<no_op;i++)
+	{
+		pos[i].x=menucorn[0]+6;
+		pos[i].y=menucorn[1]+3+i*3;
+		pos[i].wd=max_len;
+		gotoxy(pos[i].x,pos[i].y);
+		cprintf("%s",opt[i].titl);
+		fscanf(fp,"%d",&opt[i].flag);
+		switch (i)
+		{
+			case 1 :
+			case 5 :
+			case 6 :
+				break;
+			default :
+				tbox(pos[i].x+16,pos[i].y,1);
+				if (opt[i].flag==1)
+				{
+					gotoxy(pos[i].x+16,pos[i].y);
+					printf("%c",251);
+				}
+				break;
+		}
+	}
+	gotoxy(25,3);
+	printf("SETTING");
+
+	fcloseall();
+	//getch();
+}
+
+
+void  settin(int key)
+{
+   int asc=key%256;//store th asc input by the user
+   textbackground(BLUE);
+   gotoxy(pos[cur].x,pos[cur].y);
+   cprintf(opt[cur].titl);
+   //cursor handling part
+       if ((asc==9) || (key==0x5000)) cur++;
+      else if (key==0x4800  || key==0xf00) cur--;
+      else
+      {
+
+      }
+      if (cur==nbox) cur=0;
+      else if(cur==-1) cur=nbox-1;
+   //gotoxy(4,15);
+      //cprintf("%d               ",cur);
+
+//checking the key board strokes for the choosing of the options by
+//typing the number
+
+//we put a go_flag ever time a menu is choosen by pressing the
+//number key or enter key
+   if (47<asc && asc<58)
+   {
+	go_flag=1;
+	cur=asc-49;
+   }
+   else if( asc==32)
+	go_flag=1;
+   else if (asc==13)
+	go_flag=2;
+   else if (asc==27)
+	go_flag=3;
+   textbackground(RED);
+   gotoxy(pos[cur].x,pos[cur].y);
+   cprintf(opt[cur].titl);
+
+   //if go_flag is ie the user has chooser an option
+   if (go_flag==1 || go_flag==2)
+   {
+	go_flag=0;//to detect next time
+	//the curor pos whe enter was pressed
+	//or the number that was pressed
+	switch (cur+1)
+    {
+      case 1:
+	{
+//	  key=0x3c00;
+	  gotoxy(pos[cur].x+16,pos[cur].y);
+	  if (opt[cur].flag==0)
+	  {
+		opt[cur].flag=1;
+		printf("%c",251);
+	  }
+	  else
+	  {
+		opt[cur].flag=0;
+		printf(" ");
+	  }
+	  break;
+	}
+      case 2:
+	{
+	  //key=0x3d00;
+	  break;
+	}
+
+      case 3:
+	{
+	  gotoxy(pos[cur].x+16,pos[cur].y);
+	  if (opt[cur].flag==0)
+	  {
+		opt[cur].flag=1;
+		printf("%c",251);
+	  }
+	  else
+	  {
+		opt[cur].flag=0;
+		printf(" ");
+	  }
+	  break;
+	}
+      case 4:
+	{
+	  gotoxy(pos[cur].x+16,pos[cur].y);
+	  if (opt[cur].flag==0)
+	  {
+		opt[cur].flag=1;
+		printf("%c",251);
+	  }
+	  else
+	  {
+		opt[cur].flag=0;
+		printf(" ");
+	  }
+	  break;
+	}
+      case 5:
+	  gotoxy(pos[cur].x+16,pos[cur].y);
+	  if (opt[cur].flag==0)
+	  {
+		opt[cur].flag=1;
+		printf("%c",251);
+	  }
+	  else
+	  {
+		opt[cur].flag=0;
+		printf(" ");
+	  }
+	  break;
+      case 6:
+	{
+	  if (go_flag==2 ||mse_flag==1)
+	  {	fp=fopen("settings.txt","w");
+		for(i=0;i<5;i++)
+			fprintf(fp,"%d ",opt[i].flag);
+		fcloseall();
+		fp=fopen("settings.txt","r");
+		fscanf(fp,"%d %d %d %d",&read_flag.fil,&read_flag.name,&read_flag.name,&read_flag.price,&read_flag.st);
+		fcloseall();
+	  }
+	  loading();
+	  menu();
+	  curnt_fn=menu_cur;
+	  break;
+	}
+      case 7:
+	{
+	  if (go_flag==2 ||mse_flag==1)
+		curnt_fn=menu;
+	  break;
+	}
+      default:
+      {
+	gotoxy(10,15);
+	cprintf("%d",cur);
+      }
+    }
+   }
+
+
+
+//   else
+//   {
+      //printf("%#02x\n", key);
+
+//   }
+   //return (key);
+
+
+}
+
+void setn_main()
+{
+	setn_disp();
+	curnt_fn=settin;
+}
+
+#endif
+
+
+#ifndef FREEMALOC_H
+#define FREEMALOC_H
+
+void freemaloc()
+{
+	switch (malloced)
+	{
+		case 1:
+
+			//freeing the memory malloced to afitem
+			//and address passed to array fil_no.list[fil_no.cur_pos]
+			for(fil_no.cur_pos=0;fil_no.cur_pos<fil_no.tot_dat;fil_no.cur_pos++)
+				free(fil_no.list[fil_no.cur_pos]);
+			//memory malloced and realloced to fil_no.list
+			free(fil_no.list);
+			//fil_hndl=0;
+			break;
+	}
+	malloced=0;
+}
+#endif

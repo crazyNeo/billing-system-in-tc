@@ -1,0 +1,1 @@
+7	car	32.000000	234	ball	ball	12.000000	12	bike	bike	43.000000	43	boat	boat	12.000000	12	boot	boot	12.000000	12	car	car	321.000000	3434	house	house	12.000000	12	lamp	lamp	32.000000	23	
